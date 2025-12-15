@@ -1,6 +1,0 @@
--r requirements.txt
-pip-tools
-isort
-flake8
-black
-coverage

@@ -1,0 +1,16 @@
+[project]
+name = "illich"
+version = "0.1.0"
+description = "mataroa collection engine"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0",
+    "psycopg[binary]>=3.3.2",
+]
+
+[dependency-groups]
+dev = [
+    "djade>=1.7.0",
+    "ruff>=0.14.9",
+]

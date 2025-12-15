@@ -1,0 +1,39 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Load SSH key
+      run: |
+        mkdir -p ~/.ssh/
+        echo "$SSH_KEY" > ~/.ssh/server.key
+        chmod 600 ~/.ssh/server.key
+      env:
+        SSH_KEY: ${{ secrets.SSH_KEY }}
+
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/0.9.17/install.sh | sh
+
+    - name: Run ansible
+      run: cd ansible/ && uv run ansible-playbook playbook.yaml
+      env:
+        ANSIBLE_HOST_KEY_CHECKING: False
+        ANSIBLE_PRIVATE_KEY_FILE: "~/.ssh/server.key"
+        ANSIBLE_HOST: ${{ vars.ANSIBLE_HOST }}
+        ANSIBLE_USER: ${{ vars.ANSIBLE_USER }}
+        DEBUG: ${{ vars.DEBUG }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+        EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
