@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 from pathlib import Path
-from urllib import parse
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "nonrandom_secret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if os.environ.get("NODEBUG") is None else False
+DEBUG = os.getenv("DEBUG") == "1"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "collection.mataroa.blog"]
 
@@ -79,19 +78,10 @@ SESSION_COOKIE_AGE = 31449600  # 60 * 60 * 24 * 7 * 52 = 1 year in seconds
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-database_url = os.environ.get("DATABASE_URL", "")
-database_url = parse.urlparse(database_url)
-# e.g. postgres://illich:password@127.0.0.1:5432/illich
-database_name = database_url.path[1:]  # url.path is '/illich'
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": parse.unquote(database_name or ""),
-        "USER": parse.unquote(database_url.username or ""),
-        "PASSWORD": parse.unquote(database_url.password or ""),
-        "HOST": database_url.hostname,
-        "PORT": database_url.port or "",
-        "CONN_MAX_AGE": 500,
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -103,9 +93,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -141,7 +137,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True
 EMAIL_HOST = "smtp.postmarkapp.com"
-EMAIL_HOST_BROADCASTS = "smtp-broadcasts.postmarkapp.com"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = 587
