@@ -1,0 +1,18 @@
+# inventory.yaml
+
+# Server IP and user with ssh access
+export ANSIBLE_HOST=
+export ANSIBLE_USER=
+
+
+# vars.yaml
+
+# Show exceptions and tracebacks on errors
+export DEBUG=1
+
+# Used by Django to encrypt session login cookies
+export SECRET_KEY=xxx
+
+# SMTP credentials
+export EMAIL_HOST_USER=
+export EMAIL_HOST_PASSWORD=

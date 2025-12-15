@@ -1,0 +1,13 @@
+collection.mataroa.blog {
+	route {
+		file_server /static/* {
+			root /var/www/illich
+		}
+		reverse_proxy 127.0.0.1:5006
+	}
+	encode zstd gzip
+	log {
+		output stdout
+		format console
+	}
+}

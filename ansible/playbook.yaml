@@ -1,0 +1,132 @@
+---
+- hosts: virtualmachines
+  vars_files:
+    - vars.yaml
+  become: yes
+  tasks:
+    # smoke test and essential dependencies
+    - name: ping
+      ansible.builtin.ping:
+    - name: essentials
+      ansible.builtin.apt:
+        update_cache: yes
+        name:
+          - gcc
+          - git
+          - rclone
+          - vim
+        state: present
+
+    # caddy
+    - name: add caddy key
+      ansible.builtin.apt_key:
+        id: 65760C51EDEA2017CEA2CA15155B6D79CA56EA34
+        url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+        keyring: /etc/apt/trusted.gpg.d/caddy-stable.gpg
+        state: present
+    - name: add caddy deb repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/etc/apt/trusted.gpg.d/caddy-stable.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main
+    - name: add caddy deb-src repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/etc/apt/trusted.gpg.d/caddy-stable.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main
+    - name: install caddy
+      ansible.builtin.apt:
+        update_cache: yes
+        name: caddy
+    - name: caddyfile
+      ansible.builtin.template:
+        src: illich.caddy.j2
+        dest: /etc/caddy/illich.caddy
+        owner: root
+        group: root
+        mode: '0644'
+
+    # deploy user and directory
+    - name: www directory
+      ansible.builtin.file:
+        path: /var/www
+        state: directory
+        mode: '0755'
+    - name: create user
+      ansible.builtin.user:
+        name: deploy
+        password: ""
+        shell: /bin/bash
+        groups:
+          - sudo
+          - www-data
+        append: yes
+        createhome: yes
+        skeleton: '/etc/skel'
+        generate_ssh_key: yes
+        ssh_key_type: 'ed25519'
+    - name: www ownership
+      ansible.builtin.file:
+        path: /var/www
+        owner: deploy
+        group: www-data
+        recurse: yes
+
+    # uv
+    - name: uv
+      ansible.builtin.shell:
+        cmd: curl -LsSf https://astral.sh/uv/0.9.17/install.sh | sh
+      become_user: deploy
+
+    # repository
+    - name: clone
+      ansible.builtin.git:
+        repo: https://github.com/mataroablog/illich
+        dest: /var/www/illich
+        version: main
+        accept_hostkey: true
+      become_user: deploy
+
+    # systemd
+    - name: systemd template
+      ansible.builtin.template:
+        src: illich.service.j2
+        dest: /etc/systemd/system/illich.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: systemd reload
+      ansible.builtin.systemd:
+        daemon_reload: true
+    - name: systemd enable
+      ansible.builtin.systemd:
+        name: illich
+        enabled: yes
+    - name: systemd start
+      ansible.builtin.systemd:
+        name: illich
+        state: restarted
+
+    # deployment specific
+    - name: collectstatic
+      ansible.builtin.shell:
+        cmd: |
+          source $HOME/.local/bin/env
+          uv run manage.py collectstatic --no-input
+        chdir: /var/www/illich
+      args:
+        executable: /bin/bash
+      become_user: deploy
+    - name: migrations
+      ansible.builtin.shell:
+        cmd: |
+          source $HOME/.local/bin/env
+          uv run manage.py migrate --no-input
+        chdir: /var/www/illich
+      args:
+        executable: /bin/bash
+      become_user: deploy
+    - name: gunicorn restart
+      ansible.builtin.systemd:
+        name: illich
+        state: restarted
+    - name: caddy restart
+      ansible.builtin.systemd:
+        name: caddy
+        state: restarted

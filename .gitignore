@@ -4,9 +4,6 @@ venv/
 
 # environment
 .envrc
-.direnv/
-.pyenv/
-postgres-data/
 
 # generated static
 /static/
@@ -14,3 +11,6 @@ postgres-data/
 # testing
 .coverage
 htmlcov/
+
+# database
+db.sqlite3
