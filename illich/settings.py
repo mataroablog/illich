@@ -145,14 +145,3 @@ DEFAULT_FROM_EMAIL = "Mataroa Admin <admin@mataroa.blog>"
 EMAIL_FROM_HOST = "mataroa.blog"
 SERVER_EMAIL = "Ted Lasso <server@mataroa.blog>"
 EMAIL_SUBJECT_PREFIX = "[Illich Notification] "
-
-
-# Security middleware
-
-if not DEBUG:
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
-    X_FRAME_OPTIONS = "DENY"
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
